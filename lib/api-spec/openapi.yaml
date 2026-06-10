@@ -1,0 +1,1387 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: FixYa - Plataforma de servicios técnicos para el hogar
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User management
+  - name: services
+    description: Service categories and listings
+  - name: technicians
+    description: Technician management
+  - name: requests
+    description: Service requests
+  - name: payments
+    description: Payment management
+  - name: reviews
+    description: Reviews and ratings
+  - name: admin
+    description: Admin operations
+  - name: dashboard
+    description: Dashboard summaries
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── USER PROFILE ────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (admin only)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [usuario, tecnico, administrador]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{id}:
+    get:
+      operationId: getUserById
+      tags: [users]
+      summary: Get user by ID (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── SERVICE CATEGORIES ──────────────────────────────────────────────────────
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List all service categories
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a service category (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        "201":
+          description: Created service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/{id}:
+    get:
+      operationId: getService
+      tags: [services]
+      summary: Get service category by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateService
+      tags: [services]
+      summary: Update service category (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceUpdate"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete service category (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── TECHNICIANS ─────────────────────────────────────────────────────────────
+  /technicians:
+    get:
+      operationId: listTechnicians
+      tags: [technicians]
+      summary: List technicians
+      parameters:
+        - name: serviceId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, aprobado, rechazado, suspendido]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of technicians
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TechnicianList"
+
+  /technicians/me:
+    get:
+      operationId: getMyTechnicianProfile
+      tags: [technicians]
+      summary: Get current technician profile
+      responses:
+        "200":
+          description: Technician profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createTechnicianProfile
+      tags: [technicians]
+      summary: Register as a technician
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TechnicianInput"
+      responses:
+        "201":
+          description: Created technician profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+    patch:
+      operationId: updateMyTechnicianProfile
+      tags: [technicians]
+      summary: Update current technician profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TechnicianUpdate"
+      responses:
+        "200":
+          description: Updated technician
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+
+  /technicians/{id}:
+    get:
+      operationId: getTechnician
+      tags: [technicians]
+      summary: Get technician by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Technician
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /technicians/{id}/approve:
+    post:
+      operationId: approveTechnician
+      tags: [technicians]
+      summary: Approve technician (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Technician approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+
+  /technicians/{id}/reject:
+    post:
+      operationId: rejectTechnician
+      tags: [technicians]
+      summary: Reject technician (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Technician rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+
+  /technicians/top:
+    get:
+      operationId: getTopTechnicians
+      tags: [technicians]
+      summary: Get top-rated technicians
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 6
+      responses:
+        "200":
+          description: Top technicians
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Technician"
+
+  # ─── SERVICE REQUESTS ─────────────────────────────────────────────────────────
+  /requests:
+    get:
+      operationId: listRequests
+      tags: [requests]
+      summary: List service requests (filtered by role)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, aceptada, en_progreso, completada, cancelada, rechazada]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequestList"
+    post:
+      operationId: createRequest
+      tags: [requests]
+      summary: Create a service request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceRequestInput"
+      responses:
+        "201":
+          description: Created request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+
+  /requests/{id}:
+    get:
+      operationId: getRequest
+      tags: [requests]
+      summary: Get service request by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /requests/{id}/accept:
+    post:
+      operationId: acceptRequest
+      tags: [requests]
+      summary: Accept a service request (technician)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+
+  /requests/{id}/reject:
+    post:
+      operationId: rejectRequest
+      tags: [requests]
+      summary: Reject a service request (technician)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+
+  /requests/{id}/complete:
+    post:
+      operationId: completeRequest
+      tags: [requests]
+      summary: Mark a service request as completed (technician)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+
+  /requests/{id}/cancel:
+    post:
+      operationId: cancelRequest
+      tags: [requests]
+      summary: Cancel a service request (user)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+
+  # ─── PAYMENTS ─────────────────────────────────────────────────────────────────
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List payments
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, completado, fallido, reembolsado]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentList"
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Create/simulate a payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{id}:
+    get:
+      operationId: getPayment
+      tags: [payments]
+      summary: Get payment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── REVIEWS ──────────────────────────────────────────────────────────────────
+  /reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List reviews
+      parameters:
+        - name: technicianId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewList"
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Create a review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: Created review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /reviews/{id}:
+    get:
+      operationId: getReview
+      tags: [reviews]
+      summary: Get review by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  # ─── DASHBOARD ────────────────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary for admin
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/user-summary:
+    get:
+      operationId: getUserDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary for current user
+      responses:
+        "200":
+          description: User dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDashboardSummary"
+
+  /dashboard/technician-summary:
+    get:
+      operationId: getTechnicianDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary for current technician
+      responses:
+        "200":
+          description: Technician dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TechnicianDashboardSummary"
+
+  /dashboard/requests-by-status:
+    get:
+      operationId: getRequestsByStatus
+      tags: [dashboard]
+      summary: Get requests grouped by status (admin)
+      responses:
+        "200":
+          description: Requests by status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusCount"
+
+  /dashboard/revenue-by-month:
+    get:
+      operationId: getRevenueByMonth
+      tags: [dashboard]
+      summary: Get monthly revenue breakdown (admin)
+      responses:
+        "200":
+          description: Monthly revenue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyRevenue"
+
+  /dashboard/services-popularity:
+    get:
+      operationId: getServicesPopularity
+      tags: [dashboard]
+      summary: Get service categories popularity
+      responses:
+        "200":
+          description: Services popularity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServicePopularity"
+
+components:
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # ─── USER ──────────────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: ["string", "null"]
+        direccion:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [usuario, tecnico, administrador]
+        activo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - clerkId
+        - nombre
+        - apellido
+        - email
+        - role
+        - activo
+        - createdAt
+
+    UserList:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - limit
+
+    UserUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        telefono:
+          type: string
+        direccion:
+          type: string
+        avatarUrl:
+          type: string
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [usuario, tecnico, administrador]
+        activo:
+          type: boolean
+
+    # ─── SERVICE ───────────────────────────────────────────────────────────────
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: ["string", "null"]
+        icono:
+          type: ["string", "null"]
+        precioBase:
+          type: number
+        activo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nombre
+        - precioBase
+        - activo
+        - createdAt
+
+    ServiceInput:
+      type: object
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        icono:
+          type: string
+        precioBase:
+          type: number
+      required:
+        - nombre
+        - precioBase
+
+    ServiceUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        icono:
+          type: string
+        precioBase:
+          type: number
+        activo:
+          type: boolean
+
+    # ─── TECHNICIAN ────────────────────────────────────────────────────────────
+    Technician:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        serviceId:
+          type: integer
+        especialidad:
+          type: string
+        descripcion:
+          type: ["string", "null"]
+        experienciaAnios:
+          type: integer
+        precioHora:
+          type: number
+        disponible:
+          type: boolean
+        status:
+          type: string
+          enum: [pendiente, aprobado, rechazado, suspendido]
+        promedioCalificacion:
+          type: number
+        totalTrabajos:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        service:
+          $ref: "#/components/schemas/Service"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - serviceId
+        - especialidad
+        - experienciaAnios
+        - precioHora
+        - disponible
+        - status
+        - promedioCalificacion
+        - totalTrabajos
+        - createdAt
+
+    TechnicianList:
+      type: object
+      properties:
+        technicians:
+          type: array
+          items:
+            $ref: "#/components/schemas/Technician"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - technicians
+        - total
+        - page
+        - limit
+
+    TechnicianInput:
+      type: object
+      properties:
+        serviceId:
+          type: integer
+        especialidad:
+          type: string
+        descripcion:
+          type: string
+        experienciaAnios:
+          type: integer
+        precioHora:
+          type: number
+      required:
+        - serviceId
+        - especialidad
+        - experienciaAnios
+        - precioHora
+
+    TechnicianUpdate:
+      type: object
+      properties:
+        especialidad:
+          type: string
+        descripcion:
+          type: string
+        experienciaAnios:
+          type: integer
+        precioHora:
+          type: number
+        disponible:
+          type: boolean
+
+    RejectInput:
+      type: object
+      properties:
+        motivo:
+          type: string
+      required:
+        - motivo
+
+    # ─── SERVICE REQUEST ───────────────────────────────────────────────────────
+    ServiceRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        technicianId:
+          type: ["integer", "null"]
+        serviceId:
+          type: integer
+        descripcion:
+          type: string
+        direccion:
+          type: string
+        fechaServicio:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pendiente, aceptada, en_progreso, completada, cancelada, rechazada]
+        precioAcordado:
+          type: ["number", "null"]
+        motivoCancelacion:
+          type: ["string", "null"]
+        user:
+          $ref: "#/components/schemas/User"
+        technician:
+          $ref: "#/components/schemas/Technician"
+        service:
+          $ref: "#/components/schemas/Service"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - serviceId
+        - descripcion
+        - direccion
+        - fechaServicio
+        - status
+        - createdAt
+
+    ServiceRequestList:
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRequest"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - requests
+        - total
+        - page
+        - limit
+
+    ServiceRequestInput:
+      type: object
+      properties:
+        serviceId:
+          type: integer
+        technicianId:
+          type: integer
+        descripcion:
+          type: string
+        direccion:
+          type: string
+        fechaServicio:
+          type: string
+          format: date-time
+        precioAcordado:
+          type: number
+      required:
+        - serviceId
+        - descripcion
+        - direccion
+        - fechaServicio
+
+    # ─── PAYMENT ───────────────────────────────────────────────────────────────
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        requestId:
+          type: integer
+        userId:
+          type: integer
+        monto:
+          type: number
+        metodoPago:
+          type: string
+          enum: [yape, plin, tarjeta]
+        status:
+          type: string
+          enum: [pendiente, completado, fallido, reembolsado]
+        referencia:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - requestId
+        - userId
+        - monto
+        - metodoPago
+        - status
+        - createdAt
+
+    PaymentList:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - payments
+        - total
+        - page
+        - limit
+
+    PaymentInput:
+      type: object
+      properties:
+        requestId:
+          type: integer
+        monto:
+          type: number
+        metodoPago:
+          type: string
+          enum: [yape, plin, tarjeta]
+      required:
+        - requestId
+        - monto
+        - metodoPago
+
+    # ─── REVIEW ────────────────────────────────────────────────────────────────
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        requestId:
+          type: integer
+        userId:
+          type: integer
+        technicianId:
+          type: integer
+        calificacion:
+          type: integer
+        comentario:
+          type: ["string", "null"]
+        user:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - requestId
+        - userId
+        - technicianId
+        - calificacion
+        - createdAt
+
+    ReviewList:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - reviews
+        - total
+        - page
+        - limit
+
+    ReviewInput:
+      type: object
+      properties:
+        requestId:
+          type: integer
+        technicianId:
+          type: integer
+        calificacion:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comentario:
+          type: string
+      required:
+        - requestId
+        - technicianId
+        - calificacion
+
+    # ─── DASHBOARD ─────────────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      properties:
+        totalUsuarios:
+          type: integer
+        totalTecnicos:
+          type: integer
+        totalSolicitudes:
+          type: integer
+        solicitudesPendientes:
+          type: integer
+        ingresosTotales:
+          type: number
+        ingresosMes:
+          type: number
+        tecnicosPendienteAprobacion:
+          type: integer
+      required:
+        - totalUsuarios
+        - totalTecnicos
+        - totalSolicitudes
+        - solicitudesPendientes
+        - ingresosTotales
+        - ingresosMes
+        - tecnicosPendienteAprobacion
+
+    UserDashboardSummary:
+      type: object
+      properties:
+        totalSolicitudes:
+          type: integer
+        solicitudesActivas:
+          type: integer
+        solicitudesCompletadas:
+          type: integer
+        totalGastado:
+          type: number
+        recentRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRequest"
+      required:
+        - totalSolicitudes
+        - solicitudesActivas
+        - solicitudesCompletadas
+        - totalGastado
+        - recentRequests
+
+    TechnicianDashboardSummary:
+      type: object
+      properties:
+        solicitudesPendientes:
+          type: integer
+        solicitudesActivas:
+          type: integer
+        trabajosCompletados:
+          type: integer
+        ingresosTotales:
+          type: number
+        ingresosMes:
+          type: number
+        promedioCalificacion:
+          type: number
+        recentRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRequest"
+      required:
+        - solicitudesPendientes
+        - solicitudesActivas
+        - trabajosCompletados
+        - ingresosTotales
+        - ingresosMes
+        - promedioCalificacion
+        - recentRequests
+
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+        - status
+        - count
+
+    MonthlyRevenue:
+      type: object
+      properties:
+        mes:
+          type: string
+        ingresos:
+          type: number
+        solicitudes:
+          type: integer
+      required:
+        - mes
+        - ingresos
+        - solicitudes
+
+    ServicePopularity:
+      type: object
+      properties:
+        serviceName:
+          type: string
+        count:
+          type: integer
+        porcentaje:
+          type: number
+      required:
+        - serviceName
+        - count
+        - porcentaje
