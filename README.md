@@ -585,4 +585,4 @@ fixya/
 
 ---
 
-*FixYa — Proyecto universitario · Java Spring Boot · React · PostgreSQL*
+*FixYa — Proyecto universitario realizado por Katherine Vanessa Serrano Asan · Java Spring Boot · React · PostgreSQL*
