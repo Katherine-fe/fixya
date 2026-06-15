@@ -1,6 +1,6 @@
-# FixYa — Marketplace de Servicios Técnicos del Hogar
+# FixYa 
 
-> Proyecto universitario — Marketplace en español para contratar servicios técnicos del hogar (plomeros, electricistas, gasfiteros, etc.) con autenticación JWT, tres roles de usuario y reportes Excel.
+> Proyecto universitario - Plataforma para contratar servicios técnicos del hogar (plomeros, electricistas, gasfiteros, etc.) con autenticación JWT, tres roles de usuario y reportes Excel.
 
 **Repositorio:** https://github.com/Katherine-fe/fixya  
 **Stack:** Node.js · React · PostgreSQL · Java/Spring Boot
@@ -32,9 +32,9 @@
 FixYa es un marketplace que conecta clientes peruanos con técnicos del hogar verificados. Los clientes pueden buscar técnicos por especialidad, ver perfiles con calificaciones y reseñas, solicitar servicios y pagar con Yape, Plin, tarjeta o efectivo.
 
 **Roles del sistema:**
-- **Usuario/Cliente** — busca técnicos, solicita servicios, realiza pagos y deja reseñas
-- **Técnico** — gestiona su perfil, atiende solicitudes y ve sus ganancias
-- **Administrador** — aprueba técnicos, ve estadísticas globales y descarga reportes Excel
+- **Usuario/Cliente** - busca técnicos, solicita servicios, realiza pagos y deja reseñas
+- **Técnico** - gestiona su perfil, atiende solicitudes y ve sus ganancias
+- **Administrador** - aprueba técnicos, ve estadísticas globales y descarga reportes Excel
 
 ---
 
