@@ -670,5 +670,5 @@ fixya/
 | `GET` | `/api/java/reports/technicians` | Admin | Descargar reporte técnicos (.xlsx) |
 
 ---
-
-*Proyecto desarrollado para curso universitario · Stack completo con Node.js + React + Java Spring Boot · PostgreSQL*
+ 
+*Proyecto desarrollado por Katherine Vanessa Serrano Asan con Node.js + React + Java Spring Boot · PostgreSQL*
